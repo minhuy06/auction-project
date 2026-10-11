@@ -1,0 +1,37 @@
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# ==========================================
+/auction-backend/build/
+/auction-backend/out/
+/auction-backend/bin/
+
+/auction-backend/.gradle/
+
+!/auction-backend/gradle/wrapper/gradle-wrapper.jar
+hs_err_pid*
+
+# ==========================================
+/auction-frontend/node_modules/
+
+/auction-frontend/dist/
+/auction-frontend/dist-ssr/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+/auction-frontend/.env.local
+/auction-frontend/.env.development.local
+/auction-frontend/.env.test.local
+/auction-frontend/.env.production.local
+
+# ==========================================
+mysql_data/
+redis_data/
+*.sql.gz
