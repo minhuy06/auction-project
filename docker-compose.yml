@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  # ==========================================
+  # 1. DATABASE MYSQL (Lưu trữ chính)
+  # ==========================================
+
+  auction-mysql:
+    image: mysql:8.0
+    container_name: auction_db_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: huy123
+      MYSQL_DATABASE: auction_db
+      MYSQL_USER: auction_user
+      MYSQL_PASSWORD: 12345
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # ==========================================
+  # 2. REDIS CACHE (Xử lý đấu giá thời gian thực)
+  # ==========================================
+
+  auction-redis:
+    image: redis:7-alpine
+    container_name: auction_redis_container
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mysql_data:
+  redis_data:
