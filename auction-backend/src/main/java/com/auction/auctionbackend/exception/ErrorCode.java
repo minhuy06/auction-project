@@ -15,6 +15,7 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_003", "Bạn cần đăng nhập để thực hiện thao tác này"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_004", "Bạn không có quyền truy cập tài nguyên này"),
     ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "AUTH_005", "Tài khoản của bạn đã bị khóa"),
+    PHONE_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_006", "Số điện thoại này đã được sử dụng"),
 
     // Lỗi Ví tiền & Đấu giá
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "WALLET_001", "Số dư khả dụng trong ví không đủ"),
