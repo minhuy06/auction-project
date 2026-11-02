@@ -9,13 +9,16 @@ public enum ErrorCode {
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "VAL_001", "Dữ liệu đầu vào không hợp lệ"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "RES_001", "Không tìm thấy tài nguyên yêu cầu"),
 
-    // Lỗi Xác thực & Phân quyền
-    USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_001", "Tên đăng nhập hoặc email đã tồn tại"),
-    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_002", "Tên đăng nhập hoặc mật khẩu không chính xác"),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_003", "Bạn cần đăng nhập để thực hiện thao tác này"),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_004", "Bạn không có quyền truy cập tài nguyên này"),
-    ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "AUTH_005", "Tài khoản của bạn đã bị khóa"),
-    PHONE_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_006", "Số điện thoại này đã được sử dụng"),
+    // Lỗi Xác thực & Người dùng
+    USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_001", "Tên đăng nhập đã tồn tại"),
+    EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_002", "Email này đã được sử dụng"),
+    PHONE_ALREADY_EXISTS(HttpStatus.CONFLICT, "AUTH_003", "Số điện thoại này đã được sử dụng"),
+    INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_004", "Tên đăng nhập hoặc mật khẩu không chính xác"),
+    ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "AUTH_005", "Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_006", "Vui lòng đăng nhập để tiếp tục"),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_007", "Bạn không có quyền truy cập tài nguyên này"),
+    ROLE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "ROLE_001", "Lỗi hệ thống nội bộ, vui lòng thử lại sau"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "Không tìm thấy người dùng"),
 
     // Lỗi Ví tiền & Đấu giá
     INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "WALLET_001", "Số dư khả dụng trong ví không đủ"),
