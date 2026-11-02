@@ -1,0 +1,178 @@
+@baseUrl = http://localhost:8080/api/v1/auth
+
+# ==============================================================================
+# 1. ĐĂNG KÝ TÀI KHOẢN (POST /api/v1/auth/register)
+# ==============================================================================
+
+### 1.1. [THÀNH CÔNG] Đăng ký tài khoản hợp lệ (201 Created)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser01",
+  "password": "Password@123",
+  "email": "testuser01@example.com",
+  "fullName": "Nguyễn Văn A",
+  "phone": "0912345678",
+  "address": "123 Đường Lê Lợi, Quận 1, TP.HCM"
+}
+
+### 1.2. [THÀNH CÔNG] Đăng ký tài khoản hợp lệ với SĐT đầu +84 và không có địa chỉ (201 Created)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser02",
+  "password": "Password@123",
+  "email": "testuser02@example.com",
+  "fullName": "Trần Thị B",
+  "phone": "+84987654321"
+}
+
+### 1.3. [LỖI VALIDATION] Tất cả các trường bị sai định dạng / để trống (400 Bad Request - VAL_001)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "ab",
+  "password": "123",
+  "email": "email-sai-dinh-dang",
+  "fullName": "",
+  "phone": "so-dien-thoai-sai"
+}
+
+### 1.4. [LỖI VALIDATION] Mật khẩu yếu (thiếu chữ hoa, chữ số hoặc ký tự đặc biệt) (400 Bad Request - VAL_001)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "weakpassuser",
+  "password": "password123",
+  "email": "weakpass@example.com",
+  "fullName": "Lê Văn C",
+  "phone": "0911222333"
+}
+
+### 1.5. [LỖI NGHIỆP VỤ] Trùng tên đăng nhập (username đã tồn tại) (409 Conflict - AUTH_001)
+# Chạy sau khi đã chạy request 1.1
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser01",
+  "password": "Password@123",
+  "email": "newemail@example.com",
+  "fullName": "Nguyễn Văn A Bản Sao",
+  "phone": "0999888777"
+}
+
+### 1.6. [LỖI NGHIỆP VỤ] Trùng địa chỉ Email (email đã được sử dụng) (409 Conflict - AUTH_002)
+# Chạy sau khi đã chạy request 1.1
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "anotheruser01",
+  "password": "Password@123",
+  "email": "testuser01@example.com",
+  "fullName": "Người Dùng Khác",
+  "phone": "0999888666"
+}
+
+### 1.7. [LỖI NGHIỆP VỤ] Trùng số điện thoại (phone đã được sử dụng) (409 Conflict - AUTH_003)
+# Chạy sau khi đã chạy request 1.1
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "anotheruser02",
+  "password": "Password@123",
+  "email": "another02@example.com",
+  "fullName": "Người Dùng Khác 2",
+  "phone": "0912345678"
+}
+
+
+# ==============================================================================
+# 2. ĐĂNG NHẬP (POST /api/v1/auth/login)
+# ==============================================================================
+
+### 2.1. [THÀNH CÔNG] Đăng nhập hợp lệ & Tự động lưu JWT Token vào biến {{authToken}} (200 OK)
+# Chạy sau khi đã đăng ký tài khoản ở bước 1.1
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser01",
+  "password": "Password@123"
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.accessToken) {
+        client.global.set("authToken", response.body.data.accessToken);
+        client.log("Đã lưu JWT Token: " + client.global.get("authToken"));
+    }
+%}
+
+### 2.2. [LỖI VALIDATION] Để trống username và password khi đăng nhập (400 Bad Request - VAL_001)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+### 2.3. [LỖI XÁC THỰC] Sai mật khẩu (401 Unauthorized - AUTH_004)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser01",
+  "password": "WrongPassword@123"
+}
+
+### 2.4. [LỖI XÁC THỰC] Tài khoản không tồn tại (401 Unauthorized - AUTH_004)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "non_existent_user_999",
+  "password": "Password@123"
+}
+
+### 2.5. [LỖI TÀI KHOẢN] Tài khoản bị khóa (BANNED) hoặc vô hiệu hóa (INACTIVE) (403 Forbidden - AUTH_005)
+# Lưu ý: Để test trường hợp này, hãy cập nhật cột `status = 'BANNED'` hoặc `'INACTIVE'`
+# của user trong bảng `users` (DB), sau đó gọi request dưới đây:
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser01",
+  "password": "Password@123"
+}
+
+
+# ==============================================================================
+# 3. LẤY THÔNG TIN CÁ NHÂN & KIỂM TRA JWT FILTER (GET /api/v1/auth/me)
+# ==============================================================================
+
+### 3.1. [THÀNH CÔNG] Lấy thông tin cá nhân với JWT Token hợp lệ (200 OK)
+# Yêu cầu chạy request 2.1 trước để biến {{authToken}} được tự động gán giá trị
+GET {{baseUrl}}/me
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 3.2. [LỖI XÁC THỰC] Truy cập không đính kèm header Authorization (401 Unauthorized - AUTH_006)
+GET {{baseUrl}}/me
+Accept: application/json
+
+### 3.3. [LỖI XÁC THỰC] Header Authorization sai định dạng (thiếu tiền tố "Bearer ") (401 Unauthorized - AUTH_006)
+GET {{baseUrl}}/me
+Authorization: {{authToken}}
+Accept: application/json
+
+### 3.4. [LỖI XÁC THỰC] JWT Token bị sai định dạng / giả mạo / hết hạn (401 Unauthorized - AUTH_006)
+GET {{baseUrl}}/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_payload.invalid_signature
+Accept: application/json
