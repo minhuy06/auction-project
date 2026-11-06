@@ -30,7 +30,14 @@ public enum ErrorCode {
     // Lỗi danh mục & sản phẩm
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT_001", "Không tìm thấy danh mục"),
     CATEGORY_NAME_EXISTS(HttpStatus.CONFLICT, "CAT_002", "Tên danh mục đã tồn tại"),
-    INVALID_CATEGORY_PARENT(HttpStatus.BAD_REQUEST, "CAT_003", "Danh mục cha không hợp lệ");
+    INVALID_CATEGORY_PARENT(HttpStatus.BAD_REQUEST, "CAT_003", "Danh mục cha không hợp lệ"),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROD_001", "Không tìm thấy sản phẩm"),
+    NOT_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "PROD_002", "Bạn không có quyền chỉnh sửa sản phẩm của người khác"),
+    ALREADY_SELLER(HttpStatus.CONFLICT, "USER_002", "Tài khoản của bạn đã có quyền người bán"),
+
+    // Lỗi tải file (Cloudinary)
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE_001", "Định dạng file không hợp lệ, chỉ chấp nhận file ảnh"),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002", "Tải ảnh lên đám mây thất bại");
 
     private final HttpStatus httpStatus;
     private final String code;
