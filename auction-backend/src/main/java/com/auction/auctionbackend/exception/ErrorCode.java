@@ -25,7 +25,12 @@ public enum ErrorCode {
     AUCTION_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "AUC_001", "Phiên đấu giá chưa bắt đầu hoặc đã kết thúc"),
     INVALID_BID_AMOUNT(HttpStatus.BAD_REQUEST, "AUC_002", "Mức giá đặt phải lớn hơn hoặc bằng giá hiện tại cộng bước giá"),
     SELLER_CANNOT_BID(HttpStatus.FORBIDDEN, "AUC_003", "Người bán không được phép tự đặt giá sản phẩm của chính mình"),
-    BID_CONFLICT(HttpStatus.CONFLICT, "AUC_004", "Đã có người khác đặt mức giá cao hơn, vui lòng thử lại");
+    BID_CONFLICT(HttpStatus.CONFLICT, "AUC_004", "Đã có người khác đặt mức giá cao hơn, vui lòng thử lại"),
+
+    // Lỗi danh mục & sản phẩm
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT_001", "Không tìm thấy danh mục"),
+    CATEGORY_NAME_EXISTS(HttpStatus.CONFLICT, "CAT_002", "Tên danh mục đã tồn tại"),
+    INVALID_CATEGORY_PARENT(HttpStatus.BAD_REQUEST, "CAT_003", "Danh mục cha không hợp lệ");
 
     private final HttpStatus httpStatus;
     private final String code;

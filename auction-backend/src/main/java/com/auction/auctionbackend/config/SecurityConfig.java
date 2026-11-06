@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/auctions/**", "/api/v1/categories/**").permitAll()
+                        .requestMatchers("/api/v1/categories/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

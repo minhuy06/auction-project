@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:8080/api/v1/auth
 @walletUrl = http://localhost:8080/api/v1/wallet
+@categoryUrl = http://localhost:8080/api/v1/categories
 
 # ==============================================================================
 # 1. ĐĂNG KÝ TÀI KHOẢN (POST /api/v1/auth/register)
@@ -296,4 +297,189 @@ Accept: application/json
 ### 6.4. [LỖI XÁC THỰC] Xem lịch sử giao dịch không có JWT Token (401 Unauthorized - AUTH_006)
 GET {{walletUrl}}/transactions
 Accept: application/json
+
+
+# ==============================================================================
+# 7. QUẢN LÝ DANH MỤC ĐA CẤP (CATEGORIES CRUD - /api/v1/categories)
+# Lưu ý quan trọng để test quyền ADMIN:
+# 1. Mặc định tài khoản đăng ký mới (`testuser01`) chỉ có quyền `ROLE_USER`.
+# 2. Để test các kịch bản [THÀNH CÔNG] của ADMIN, hãy chạy câu lệnh SQL sau trong DB
+#    để cấp quyền ROLE_ADMIN cho `testuser01`:
+#    INSERT INTO user_roles (user_id, role_id)
+#    SELECT u.id, r.id FROM users u, roles r
+#    WHERE u.username = 'testuser01' AND r.name = 'ROLE_ADMIN';
+# ==============================================================================
+
+### 7.1. [LỖI PHÂN QUYỀN] Tài khoản thường (ROLE_USER - testuser02) cố tình tạo danh mục (403 Forbidden - AUTH_007)
+# Đăng nhập bằng testuser02 (chỉ có ROLE_USER) để lấy {{userToken}}
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser02",
+  "password": "Password@123"
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.accessToken) {
+        client.global.set("userToken", response.body.data.accessToken);
+    }
+%}
+
+### 7.2. [LỖI PHÂN QUYỀN] Gọi POST tạo danh mục bằng {{userToken}} của ROLE_USER (403 Forbidden - AUTH_007)
+POST {{categoryUrl}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "name": "Danh mục trái phép",
+  "description": "User thường không được phép tạo"
+}
+
+### 7.3. [LỖI XÁC THỰC] Gọi POST tạo danh mục không kèm JWT Token (401 Unauthorized - AUTH_006)
+POST {{categoryUrl}}
+Content-Type: application/json
+
+{
+  "name": "Danh mục không token"
+}
+
+### 7.4. [THÀNH CÔNG] ADMIN tạo danh mục gốc Cấp 1: "Đồ điện tử" (201 Created)
+# Yêu cầu: Đã gán ROLE_ADMIN cho testuser01 trong DB và chạy mục 2.1 để có {{authToken}}
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Đồ điện tử",
+  "description": "Các thiết bị điện tử, công nghệ số"
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("rootCatId", response.body.data.id);
+        client.log("Đã lưu ID danh mục gốc (Cấp 1): " + client.global.get("rootCatId"));
+    }
+%}
+
+### 7.5. [THÀNH CÔNG] ADMIN tạo danh mục con Cấp 2: "Điện thoại di động" thuộc "Đồ điện tử" (201 Created)
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Điện thoại di động",
+  "description": "Smartphone các hãng Apple, Samsung, Xiaomi...",
+  "parentId": {{rootCatId}}
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("childCatId", response.body.data.id);
+        client.log("Đã lưu ID danh mục con (Cấp 2): " + client.global.get("childCatId"));
+    }
+%}
+
+### 7.6. [THÀNH CÔNG] ADMIN tạo danh mục cháu Cấp 3: "iPhone" thuộc "Điện thoại di động" (201 Created)
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "iPhone",
+  "description": "Điện thoại iPhone chính hãng Apple",
+  "parentId": {{childCatId}}
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("grandChildCatId", response.body.data.id);
+        client.log("Đã lưu ID danh mục cháu (Cấp 3): " + client.global.get("grandChildCatId"));
+    }
+%}
+
+### 7.7. [THÀNH CÔNG - PUBLIC] Lấy toàn bộ cây danh mục đa cấp (Không cần đăng nhập) (200 OK)
+GET {{categoryUrl}}
+Accept: application/json
+
+### 7.8. [THÀNH CÔNG - PUBLIC] Xem chi tiết 1 danh mục kèm danh sách con của nó (Không cần đăng nhập) (200 OK)
+GET {{categoryUrl}}/{{rootCatId}}
+Accept: application/json
+
+### 7.9. [LỖI VALIDATION] Tạo danh mục với tên rỗng (400 Bad Request - VAL_001)
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "   ",
+  "description": "Tên chỉ có khoảng trắng"
+}
+
+### 7.10. [LỖI NGHIỆP VỤ] Tạo danh mục bị trùng tên đã tồn tại (409 Conflict - CAT_002)
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "  Đồ điện tử  ",
+  "description": "Cố tình thêm khoảng trắng hai đầu để kiểm tra trim()"
+}
+
+### 7.11. [LỖI NGHIỆP VỤ] Tạo danh mục với parentId không tồn tại (404 Not Found - CAT_001)
+POST {{categoryUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Danh mục mồ côi",
+  "parentId": 999999
+}
+
+### 7.12. [LỖI CHỐNG CHU TRÌNH - TỰ NHẬN MÌNH LÀM CHA] Cập nhật danh mục có parentId bằng chính id của nó (400 Bad Request - CAT_003)
+PUT {{categoryUrl}}/{{rootCatId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Đồ điện tử",
+  "description": "Tự gán chính mình làm cha",
+  "parentId": {{rootCatId}}
+}
+
+### 7.13. [LỖI CHỐNG CHU TRÌNH - NHẬN CHÁU LÀM CHA] Cập nhật Cấp 1 ("Đồ điện tử") nhận Cấp 3 ("iPhone") làm cha (400 Bad Request - CAT_003)
+PUT {{categoryUrl}}/{{rootCatId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Đồ điện tử",
+  "description": "Thử gán danh mục cháu (Cấp 3) làm cha của danh mục gốc (Cấp 1)",
+  "parentId": {{grandChildCatId}}
+}
+
+### 7.14. [THÀNH CÔNG] ADMIN cập nhật tên và mô tả danh mục hợp lệ (200 OK)
+PUT {{categoryUrl}}/{{childCatId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Điện thoại & Máy tính bảng",
+  "description": "Đã cập nhật mở rộng thêm máy tính bảng",
+  "parentId": {{rootCatId}}
+}
+
+### 7.15. [THÀNH CÔNG] ADMIN xóa danh mục ở giữa ("Điện thoại & Máy tính bảng" - Cấp 2) (200 OK)
+# Nhờ @PreRemove, danh mục con "iPhone" (Cấp 3) sẽ không bị mất mà tự động chuyển parentId về null (trở thành danh mục gốc)
+DELETE {{categoryUrl}}/{{childCatId}}
+Authorization: Bearer {{authToken}}
+
+### 7.16. [KIỂM TRA SAU KHI XÓA] Gọi lại cây danh mục để xác nhận "iPhone" đã trở thành danh mục gốc (parentId = null) (200 OK)
+GET {{categoryUrl}}
+Accept: application/json
+
+### 7.17. [LỖI NGHIỆP VỤ] Xem hoặc xóa danh mục đã bị xóa / không tồn tại (404 Not Found - CAT_001)
+GET {{categoryUrl}}/{{childCatId}}
+Accept: application/json
+
 

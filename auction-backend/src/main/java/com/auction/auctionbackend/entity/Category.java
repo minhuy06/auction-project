@@ -2,6 +2,7 @@ package com.auction.auctionbackend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ public class Category {
     private Category parent;
 
     @Builder.Default
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "parent", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Category> children = new ArrayList<>();
 
