@@ -25,7 +25,7 @@ public class CloudinaryService {
         }
 
         String contentType = file.getContentType();
-        if(contentType == null || !contentType.startsWith("images/")){
+        if(contentType == null || !contentType.startsWith("image/")){
             throw new AppException(ErrorCode.INVALID_FILE_TYPE);
         }
 
