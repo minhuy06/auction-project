@@ -86,4 +86,22 @@ public class AuthService {
 
         return UserResponse.fromEntity(user);
     }
+
+    @Transactional
+    public UserResponse upgradeToSeller(String username){
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        boolean isAlreadySeller = user.getRoles().stream()
+                .anyMatch(role -> role.getName() == RoleName.ROLE_SELLER);
+        if(isAlreadySeller){
+            throw new AppException(ErrorCode.ALREADY_SELLER);
+        }
+        Role sellerRole = roleRepository.findByName(RoleName.ROLE_SELLER)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        user.getRoles().add(sellerRole);
+        User savedUser = userRepository.save(user);
+        return UserResponse.fromEntity(user);
+    }
 }

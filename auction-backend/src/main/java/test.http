@@ -1,6 +1,7 @@
 @baseUrl = http://localhost:8080/api/v1/auth
 @walletUrl = http://localhost:8080/api/v1/wallet
 @categoryUrl = http://localhost:8080/api/v1/categories
+@productUrl = http://localhost:8080/api/v1/products
 
 # ==============================================================================
 # 1. ĐĂNG KÝ TÀI KHOẢN (POST /api/v1/auth/register)
@@ -402,6 +403,13 @@ Content-Type: application/json
 GET {{categoryUrl}}
 Accept: application/json
 
+> {%
+    if (response.body && response.body.data && response.body.data.length > 0) {
+        client.global.set("rootCatId", response.body.data[0].id);
+        client.log("Đã lấy ID danh mục gốc từ DB: " + client.global.get("rootCatId"));
+    }
+%}
+
 ### 7.8. [THÀNH CÔNG - PUBLIC] Xem chi tiết 1 danh mục kèm danh sách con của nó (Không cần đăng nhập) (200 OK)
 GET {{categoryUrl}}/{{rootCatId}}
 Accept: application/json
@@ -481,5 +489,199 @@ Accept: application/json
 ### 7.17. [LỖI NGHIỆP VỤ] Xem hoặc xóa danh mục đã bị xóa / không tồn tại (404 Not Found - CAT_001)
 GET {{categoryUrl}}/{{childCatId}}
 Accept: application/json
+
+
+# ==============================================================================
+# 8. NÂNG CẤP TÀI KHOẢN SELLER & QUẢN LÝ SẢN PHẨM (/api/v1/products)
+# Yêu cầu chuẩn bị:
+# - Đã chạy 2.1 để có {{authToken}} (của testuser01)
+# - Đã chạy 7.1 để có {{userToken}} (của testuser02 - chỉ có ROLE_USER)
+# - Hãy chạy bước 8.0 bên dưới để tự động lấy {{rootCatId}} từ DB!
+# ==============================================================================
+
+### 8.0. [CHUẨN BỊ] Tự động lấy ID danh mục đầu tiên trong DB gán vào {{rootCatId}} (200 OK)
+GET {{categoryUrl}}
+Accept: application/json
+
+> {%
+    if (response.body && response.body.data && response.body.data.length > 0) {
+        client.global.set("rootCatId", response.body.data[0].id);
+        client.log("Đã gán rootCatId = " + client.global.get("rootCatId"));
+    } else {
+        client.global.set("rootCatId", 1);
+        client.log("DB chưa có danh mục, tạm gán rootCatId = 1");
+    }
+%}
+
+### 8.1. [LỖI PHÂN QUYỀN] Tài khoản chưa nâng cấp SELLER (testuser02) cố tình tạo sản phẩm (403 Forbidden - AUTH_007)
+POST {{productUrl}}
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "Sản phẩm chưa có quyền Seller",
+  "description": "Cố tình đăng bán khi mới chỉ là ROLE_USER",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+### 8.2. [LỖI PHÂN QUYỀN] Tài khoản thường (ROLE_USER) cố tình truy cập kho sản phẩm cá nhân /me (403 Forbidden - AUTH_007)
+GET {{productUrl}}/me
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+### 8.3. [THÀNH CÔNG] Nâng cấp tài khoản testuser01 từ ROLE_USER lên ROLE_SELLER (200 OK)
+POST {{baseUrl}}/upgrade-seller
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 8.4. [LỖI NGHIỆP VỤ] Gọi nâng cấp Seller lần 2 khi tài khoản đã có ROLE_SELLER (409 Conflict - USER_002)
+POST {{baseUrl}}/upgrade-seller
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 8.5. [THÀNH CÔNG] SELLER tạo sản phẩm mới (Không kèm ảnh - chỉ gửi part JSON "product") (201 Created)
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "iPhone 16 Pro Max 256GB Titan Tự Nhiên",
+  "description": "Máy mới 99%, nguyên zin chưa qua sửa chữa, fullbox",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("productId", response.body.data.id);
+        client.log("Đã lưu ID sản phẩm: " + client.global.get("productId"));
+    }
+%}
+
+### 8.6. [THÀNH CÔNG - UPLOAD CLOUDINARY] SELLER tạo sản phẩm mới CÓ KÈM FILE ẢNH (201 Created)
+# File sample.png đã được tạo sẵn cùng thư mục với test.http để test Cloudinary ngay lập tức
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "MacBook Pro M3 Max 16 inch",
+  "description": "RAM 64GB, SSD 1TB, Hàng chính hãng Apple Việt Nam",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="images"; filename="sample.png"
+Content-Type: image/png
+
+< ./sample.png
+--WebAppBoundary--
+
+### 8.7. [LỖI VALIDATION] Tạo sản phẩm nhưng để trống tên và thiếu categoryId (400 Bad Request - VAL_001)
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "   ",
+  "description": "Thiếu tên và thiếu danh mục"
+}
+--WebAppBoundary--
+
+### 8.8. [LỖI NGHIỆP VỤ] Tạo sản phẩm với categoryId không tồn tại (404 Not Found - CAT_001)
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "Đồng hồ cổ",
+  "description": "Danh mục không tồn tại",
+  "categoryId": 999999
+}
+--WebAppBoundary--
+
+### 8.9. [THÀNH CÔNG - SELLER] Xem danh sách sản phẩm trong kho cá nhân của Seller (/api/v1/products/me) (200 OK)
+GET {{productUrl}}/me?page=0&size=10
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 8.10. [THÀNH CÔNG - PUBLIC] Xem danh sách tất cả sản phẩm có phân trang (Không cần đăng nhập) (200 OK)
+GET {{productUrl}}?page=0&size=10
+Accept: application/json
+
+### 8.11. [THÀNH CÔNG - PUBLIC] Xem chi tiết 1 sản phẩm theo ID (Không cần đăng nhập) (200 OK)
+GET {{productUrl}}/{{productId}}
+Accept: application/json
+
+### 8.12. [THÀNH CÔNG] SELLER cập nhật thông tin sản phẩm của chính mình (200 OK)
+PUT {{productUrl}}/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "iPhone 16 Pro Max 512GB Titan Tự Nhiên (Đã cập nhật)",
+  "description": "Đã nâng cấp mô tả: Tặng kèm cáp sạc nhanh 20W chính hãng",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+### 8.13. [LỖI QUYỀN SỞ HỮU] Seller khác (testuser02) cố tình sửa sản phẩm của testuser01 (403 Forbidden - PROD_002)
+# Bước 13a: Nâng cấp testuser02 lên ROLE_SELLER trước để vượt qua chốt chặn SecurityConfig
+POST {{baseUrl}}/upgrade-seller
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+### 8.14. [LỖI QUYỀN SỞ HỮU] Bước 13b: Dùng {{userToken}} (Seller 2) gọi PUT sửa sản phẩm của Seller 1 (403 Forbidden - PROD_002)
+PUT {{productUrl}}/{{productId}}
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "Sản phẩm bị chiếm đoạt",
+  "description": "Seller khác cố tình sửa",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+### 8.15. [LỖI QUYỀN SỞ HỮU] Seller khác (testuser02) cố tình xóa sản phẩm của testuser01 (403 Forbidden - PROD_002)
+DELETE {{productUrl}}/{{productId}}
+Authorization: Bearer {{userToken}}
+
+### 8.16. [THÀNH CÔNG] SELLER xóa sản phẩm của chính mình khi chưa mở phiên đấu giá (200 OK)
+DELETE {{productUrl}}/{{productId}}
+Authorization: Bearer {{authToken}}
+
+### 8.17. [LỖI NGHIỆP VỤ] Xem chi tiết sản phẩm đã bị xóa / không tồn tại (404 Not Found - PROD_001)
+GET {{productUrl}}/{{productId}}
+Accept: application/json
+
 
 

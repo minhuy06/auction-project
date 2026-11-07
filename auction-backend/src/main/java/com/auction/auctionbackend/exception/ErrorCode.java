@@ -34,6 +34,7 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROD_001", "Không tìm thấy sản phẩm"),
     NOT_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "PROD_002", "Bạn không có quyền chỉnh sửa sản phẩm của người khác"),
     ALREADY_SELLER(HttpStatus.CONFLICT, "USER_002", "Tài khoản của bạn đã có quyền người bán"),
+    PRODUCT_IN_AUCTION(HttpStatus.CONFLICT, "PROD_003", "Không thể xóa sản phẩm đã được đưa vào phiên đấu giá"),
 
     // Lỗi tải file (Cloudinary)
     INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE_001", "Định dạng file không hợp lệ, chỉ chấp nhận file ảnh"),

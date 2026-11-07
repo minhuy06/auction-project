@@ -39,4 +39,10 @@ public class AuthController {
         UserResponse response = authService.getCurrentUser(userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin cá nhân thành công"));
     }
+
+    @PostMapping("/upgrade-seller")
+    public ResponseEntity<ApiResponse<UserResponse>> upgradeToSeller(@AuthenticationPrincipal UserDetails userDetails){
+        UserResponse response = authService.upgradeToSeller(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(response, "Nâng cấp tài khoản lên người bán thành công"));
+    }
 }
