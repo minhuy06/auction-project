@@ -39,11 +39,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/products/me").hasRole("SELLER")
+                        .requestMatchers("/api/v1/products/me", "/api/v1/auctions/me").hasRole("SELLER")
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/v1/auctions/**",
                                 "/api/v1/categories/**",
                                 "/api/v1/products/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/auctions").hasRole("SELLER")
                         .requestMatchers("/api/v1/categories/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/products/**").hasRole("SELLER")
                         .anyRequest().authenticated()

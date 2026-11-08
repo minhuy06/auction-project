@@ -127,7 +127,7 @@ Giải quyết bài toán phân loại hàng hóa đa cấp và lưu trữ hình
 - [x] **1. Danh mục đa cấp (`feat/category-management`)**:
   - Tạo Entity: `Category` (cấu hình quan hệ tự tham chiếu `@ManyToOne` cho `parent` và `@OneToMany` cho `children`).
   - Xây dựng API CRUD danh mục (chỉ `ROLE_ADMIN` được thêm/sửa/xóa; mọi người đều được xem danh sách dạng cây phân cấp).
-- [🔄 IN PROGRESS] **2. Sản phẩm & Tải ảnh lên Cloud (`feat/product-management`)**:
+- [] **2. Sản phẩm & Tải ảnh lên Cloud (`feat/product-management`)**:
   - Tích hợp **Cloudinary SDK** (hoặc MinIO) để nhận file ảnh (`MultipartFile`), đẩy lên đám mây và thu về đường dẫn URL.
   - Tạo Entity: `Product` (ánh xạ cột `image_urls` kiểu JSON sang `List<String>` trong Java).
   - Xây dựng API cho phép người bán (`ROLE_SELLER`) thêm mới, cập nhật sản phẩm của chính họ và API nâng cấp tài khoản từ người mua lên người bán.
@@ -140,7 +140,7 @@ Tách biệt hoàn toàn việc "Quản lý thông tin phiên" và "Hành độn
 - [ ] **1. Mở phiên đấu giá (`feat/auction-creation`)**:
   - Tạo Entity: `Auction`.
   - Xây dựng API `POST /api/v1/auctions`: Kiểm tra nghiêm ngặt sản phẩm có thuộc về Seller đó không, sản phẩm đã nằm trong phiên nào khác chưa, `start_time` phải ở tương lai, `end_time > start_time`, `starting_price > 0` và `step_price > 0`.
-- [ ] **2. Tìm kiếm & Lọc nâng cao (`feat/auction-search`)**:
+- [🔄 IN PROGRESS] **2. Tìm kiếm & Lọc nâng cao (`feat/auction-search`)**:
   - Sử dụng **Spring Data JPA Specification** kết hợp `Pageable` để viết API `GET /api/v1/auctions`: Hỗ trợ tìm theo từ khóa tên sản phẩm, lọc theo `category_id`, lọc theo trạng thái (`UPCOMING`, `IN_PROGRESS`, `COMPLETED`), lọc theo khoảng giá và sắp xếp theo thời gian kết thúc.
 
 ---

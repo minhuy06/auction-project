@@ -2,6 +2,7 @@
 @walletUrl = http://localhost:8080/api/v1/wallet
 @categoryUrl = http://localhost:8080/api/v1/categories
 @productUrl = http://localhost:8080/api/v1/products
+@auctionUrl = http://localhost:8080/api/v1/auctions
 
 # ==============================================================================
 # 1. ĐĂNG KÝ TÀI KHOẢN (POST /api/v1/auth/register)
@@ -682,6 +683,145 @@ Authorization: Bearer {{authToken}}
 ### 8.17. [LỖI NGHIỆP VỤ] Xem chi tiết sản phẩm đã bị xóa / không tồn tại (404 Not Found - PROD_001)
 GET {{productUrl}}/{{productId}}
 Accept: application/json
+
+
+# ==============================================================================
+# 9. MỞ PHIÊN ĐẤU GIÁ & TRUY VẤN PHIÊN ĐẤU GIÁ (/api/v1/auctions)
+# Yêu cầu chuẩn bị:
+# - Đã chạy 2.1 để có {{authToken}} (của testuser01 - đã nâng cấp ROLE_SELLER ở 8.3)
+# - Đã chạy 7.1 để có {{userToken}} (của testuser02)
+# - Hãy chạy bước 9.0 bên dưới để tạo mới 1 sản phẩm dành riêng cho phiên đấu giá!
+# ==============================================================================
+
+### 9.0. [CHUẨN BỊ] Tạo 1 sản phẩm mới cho testuser01 để đem đi đấu giá (201 Created)
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "Đồng hồ Rolex Cosmograph Daytona 2026",
+  "description": "Hàng chính hãng nguyên hộp, đầy đủ giấy tờ chứng nhận để đấu giá",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("auctionProductId", response.body.data.id);
+        client.log("Đã lưu ID sản phẩm đấu giá (auctionProductId): " + client.global.get("auctionProductId"));
+    }
+%}
+
+### 9.1. [THÀNH CÔNG] SELLER mở phiên đấu giá hợp lệ cho sản phẩm của mình (201 Created)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": {{auctionProductId}},
+  "startingPrice": 50000000.00,
+  "stepPrice": 1000000.00,
+  "startTime": "2027-01-10T10:00:00",
+  "endTime": "2027-01-15T22:00:00"
+}
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("auctionId", response.body.data.id);
+        client.log("Đã lưu ID phiên đấu giá (auctionId): " + client.global.get("auctionId"));
+    }
+%}
+
+### 9.2. [LỖI NGHIỆP VỤ] Tạo trùng phiên đấu giá thứ 2 trên cùng 1 sản phẩm (409 Conflict - AUC_006)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": {{auctionProductId}},
+  "startingPrice": 60000000.00,
+  "stepPrice": 1000000.00,
+  "startTime": "2027-02-01T10:00:00",
+  "endTime": "2027-02-05T22:00:00"
+}
+
+### 9.3. [LỖI QUYỀN SỞ HỮU] Seller khác (testuser02) cố tình mở phiên đấu giá bằng sản phẩm của testuser01 (403 Forbidden - PROD_002)
+POST {{auctionUrl}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "productId": {{auctionProductId}},
+  "startingPrice": 50000000.00,
+  "stepPrice": 1000000.00,
+  "startTime": "2027-02-01T10:00:00",
+  "endTime": "2027-02-05T22:00:00"
+}
+
+### 9.4. [LỖI NGHIỆP VỤ] Thời gian kết thúc nhỏ hơn hoặc bằng thời gian bắt đầu (400 Bad Request - AUC_007)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": {{auctionProductId}},
+  "startingPrice": 50000000.00,
+  "stepPrice": 1000000.00,
+  "startTime": "2027-03-10T10:00:00",
+  "endTime": "2027-03-08T10:00:00"
+}
+
+### 9.5. [LỖI VALIDATION] Giá khởi điểm <= 0, bước giá <= 0 hoặc thời gian ở quá khứ (400 Bad Request - VAL_001)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": {{auctionProductId}},
+  "startingPrice": 0,
+  "stepPrice": -10000,
+  "startTime": "2020-01-01T10:00:00",
+  "endTime": "2020-01-02T10:00:00"
+}
+
+### 9.6. [LỖI NGHIỆP VỤ] Mở phiên đấu giá với productId không tồn tại (404 Not Found - PROD_001)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": 999999,
+  "startingPrice": 50000000.00,
+  "stepPrice": 1000000.00,
+  "startTime": "2027-01-10T10:00:00",
+  "endTime": "2027-01-15T22:00:00"
+}
+
+### 9.7. [THÀNH CÔNG - SELLER] Xem danh sách các phiên đấu giá do chính mình mở (/api/v1/auctions/me) (200 OK)
+GET {{auctionUrl}}/me?page=0&size=10
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### 9.8. [LỖI XÁC THỰC] Gọi /api/v1/auctions/me nhưng không kèm JWT Token (401 Unauthorized - AUTH_006)
+GET {{auctionUrl}}/me
+Accept: application/json
+
+### 9.9. [THÀNH CÔNG - PUBLIC] Xem chi tiết 1 phiên đấu giá theo ID (Không cần đăng nhập) (200 OK)
+GET {{auctionUrl}}/{{auctionId}}
+Accept: application/json
+
+### 9.10. [LỖI NGHIỆP VỤ] Xem chi tiết phiên đấu giá không tồn tại (404 Not Found - AUC_005)
+GET {{auctionUrl}}/999999
+Accept: application/json
+
+### 9.11. [KIỂM TRA RÀNG BUỘC XÓA SẢN PHẨM] Thử xóa sản phẩm đã nằm trong phiên đấu giá (409 Conflict - PROD_003)
+DELETE {{productUrl}}/{{auctionProductId}}
+Authorization: Bearer {{authToken}}
+
 
 
 

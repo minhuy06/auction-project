@@ -23,7 +23,7 @@ public class Auction {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @Column(name = "product_id", nullable = false, unique = true)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
     @Column(name = "starting_price", nullable = false, precision = 15, scale = 2)

@@ -26,6 +26,9 @@ public enum ErrorCode {
     INVALID_BID_AMOUNT(HttpStatus.BAD_REQUEST, "AUC_002", "Mức giá đặt phải lớn hơn hoặc bằng giá hiện tại cộng bước giá"),
     SELLER_CANNOT_BID(HttpStatus.FORBIDDEN, "AUC_003", "Người bán không được phép tự đặt giá sản phẩm của chính mình"),
     BID_CONFLICT(HttpStatus.CONFLICT, "AUC_004", "Đã có người khác đặt mức giá cao hơn, vui lòng thử lại"),
+    AUCTION_NOT_FOUND(HttpStatus.NOT_FOUND, "AUC_005", "Không tìm thấy phiên đấu giá"),
+    PRODUCT_ALREADY_IN_AUCTION(HttpStatus.CONFLICT, "AUC_006", "Sản phẩm này đã được đăng ký trong một phiên đấu giá khác"),
+    INVALID_AUCTION_TIME(HttpStatus.BAD_REQUEST, "AUC_007", "Thời gian kết thúc phải lớn hơn thời gian bắt đầu và thời gian bắt đầu phải ở tương lai"),
 
     // Lỗi danh mục & sản phẩm
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT_001", "Không tìm thấy danh mục"),
