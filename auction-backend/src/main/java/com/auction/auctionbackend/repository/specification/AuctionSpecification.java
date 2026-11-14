@@ -24,8 +24,8 @@ public class AuctionSpecification {
             if(query != null && query.getResultType() != Long.class && query.getResultType() != long.class){
                 var productFetch = root.fetch("product", JoinType.INNER);
                 productFetch.fetch("seller", JoinType.INNER);
-                productFetch.fetch("category", JoinType.INNER);
-                root.fetch("winner", JoinType.INNER);
+                productFetch.fetch("category", JoinType.LEFT);
+                root.fetch("winner", JoinType.LEFT);
             }
 
             List<Predicate> predicats = new ArrayList<>();

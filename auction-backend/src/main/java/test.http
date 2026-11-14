@@ -823,5 +823,92 @@ DELETE {{productUrl}}/{{auctionProductId}}
 Authorization: Bearer {{authToken}}
 
 
+# ==============================================================================
+# 10. TÌM KIẾM & LỌC NÂNG CAO PHIÊN ĐẤU GIÁ (GET /api/v1/auctions)
+# Yêu cầu chuẩn bị:
+# - Chạy 2.1 để có {{authToken}}
+# - Chạy lần lượt 10.0.0 -> 10.0.1 -> 10.0.2 bên dưới để tự động lấy {{rootCatId}} và tạo phiên đấu giá mẫu!
+# ==============================================================================
 
+### 10.0.0. [CHUẨN BỊ] Tự động lấy ID danh mục trong DB gán vào biến {{rootCatId}} (200 OK)
+GET {{categoryUrl}}
+Accept: application/json
+
+> {%
+    if (response.body && response.body.data && response.body.data.length > 0) {
+        client.global.set("rootCatId", response.body.data[0].id);
+        client.log("Đã gán rootCatId = " + client.global.get("rootCatId"));
+    } else {
+        client.global.set("rootCatId", 1);
+        client.log("DB chưa có danh mục, tạm gán rootCatId = 1");
+    }
+%}
+
+### 10.0.1. [CHUẨN BỊ] Tạo thêm sản phẩm thứ 2 để mở phiên đấu giá (201 Created)
+POST {{productUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "iPhone 16 Pro Max 1TB Bản Giới Hạn",
+  "description": "Sản phẩm công nghệ cao cấp dùng để kiểm thử bộ lọc tìm kiếm đấu giá",
+  "categoryId": {{rootCatId}}
+}
+--WebAppBoundary--
+
+> {%
+    if (response.body && response.body.data && response.body.data.id) {
+        client.global.set("secondAuctionProductId", response.body.data.id);
+        client.log("Đã lưu ID sản phẩm đấu giá số 2: " + client.global.get("secondAuctionProductId"));
+    }
+%}
+
+### 10.0.2. [CHUẨN BỊ] Mở phiên đấu giá thứ 2 với mức giá thấp hơn (15,000,000 VNĐ) và kết thúc sớm hơn (201 Created)
+POST {{auctionUrl}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "productId": {{secondAuctionProductId}},
+  "startingPrice": 15000000.00,
+  "stepPrice": 500000.00,
+  "startTime": "2027-01-05T08:00:00",
+  "endTime": "2027-01-08T20:00:00"
+}
+
+### 10.1. [THÀNH CÔNG - PUBLIC] Lấy tất cả phiên đấu giá mặc định (Không truyền bộ lọc, tự động xếp theo endTime tăng dần) (200 OK)
+GET {{auctionUrl}}
+Accept: application/json
+
+### 10.2. [THÀNH CÔNG - LỌC THEO TỪ KHÓA] Tìm kiếm theo từ khóa tên sản phẩm (Không phân biệt hoa thường & có khoảng trắng) (200 OK)
+GET {{auctionUrl}}?keyword=rolex
+Accept: application/json
+
+### 10.3. [THÀNH CÔNG - LỌC THEO DANH MỤC & TRẠNG THÁI] Lọc theo categoryId và status=UPCOMING (200 OK)
+GET {{auctionUrl}}?categoryId={{rootCatId}}&status=UPCOMING
+Accept: application/json
+
+### 10.4. [THÀNH CÔNG - LỌC THEO KHOẢNG GIÁ] Lọc các phiên có giá hiện tại từ 10 triệu đến 30 triệu VNĐ (Chỉ ra iPhone, loại Rolex 50 triệu) (200 OK)
+GET {{auctionUrl}}?minPrice=10000000&maxPrice=30000000
+Accept: application/json
+
+### 10.5. [THÀNH CÔNG - SẮP XẾP GIẢM DẦN THEO GIÁ] Sắp xếp theo currentPrice giảm dần (Rolex 50tr đứng trước iPhone 15tr) (200 OK)
+GET {{auctionUrl}}?sortBy=currentPrice&sortDir=desc
+Accept: application/json
+
+### 10.6. [THÀNH CÔNG - KẾT HỢP TẤT CẢ BỘ LỌC & PHÂN TRANG] Tìm kết hợp keyword + categoryId + status + minPrice + maxPrice + sort + page/size (200 OK)
+GET {{auctionUrl}}?keyword=iphone&categoryId={{rootCatId}}&status=UPCOMING&minPrice=10000000&maxPrice=20000000&page=0&size=5&sortBy=endTime&sortDir=asc
+Accept: application/json
+
+### 10.7. [KIỂM TRA PHÒNG THỦ SORT] Truyền tên cột sortBy không tồn tại (Hệ thống không bị lỗi 500 mà tự động fallback về endTime) (200 OK)
+GET {{auctionUrl}}?sortBy=cot_khong_ton_tai&sortDir=asc
+Accept: application/json
+
+### 10.8. [THÀNH CÔNG - KẾT QUẢ RỖNG] Tìm từ khóa không khớp với bất kỳ sản phẩm nào (Trả về mảng content rỗng [], 200 OK)
+GET {{auctionUrl}}?keyword=san_pham_khong_he_ton_tai_xyz
+Accept: application/json
 

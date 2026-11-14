@@ -9,14 +9,19 @@ import com.auction.auctionbackend.exception.AppException;
 import com.auction.auctionbackend.exception.ErrorCode;
 import com.auction.auctionbackend.repository.AuctionRepository;
 import com.auction.auctionbackend.repository.ProductRepository;
+import com.auction.auctionbackend.repository.specification.AuctionSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,7 @@ public class AuctionService {
 
     private final AuctionRepository auctionRepository;
     private final ProductRepository productRepository;
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("endTime", "startTime", "currentPrice", "startingPrice", "createdAt");
 
     @Transactional
     public AuctionResponse createAuction(String username, AuctionRequest request){
@@ -67,6 +73,29 @@ public class AuctionService {
     public Page<AuctionResponse> getMyAuctions(String username, int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         return auctionRepository.findByProductSellerUsernameOrderByCreatedAtDesc(username, pageable)
+                .map(AuctionResponse::fromEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuctionResponse> searchAuctions(
+            String keyword,
+            Long categoryId,
+            AuctionStatus status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir
+    ) {
+        String validSortBy = (sortBy != null && ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "endTime");
+        Sort sort = "desc".equalsIgnoreCase(sortDir)
+                ? Sort.by(validSortBy).descending()
+                : Sort.by(validSortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Specification<Auction> spec = AuctionSpecification.filterAuctions(keyword, categoryId, status, minPrice, maxPrice);
+        return auctionRepository.findAll(spec, pageable)
                 .map(AuctionResponse::fromEntity);
     }
 }
