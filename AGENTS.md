@@ -140,7 +140,7 @@ Tách biệt hoàn toàn việc "Quản lý thông tin phiên" và "Hành độn
 - [x] **1. Mở phiên đấu giá (`feat/auction-creation`)**:
   - Tạo Entity: `Auction`.
   - Xây dựng API `POST /api/v1/auctions`: Kiểm tra nghiêm ngặt sản phẩm có thuộc về Seller đó không, sản phẩm đã nằm trong phiên nào khác chưa, `start_time` phải ở tương lai, `end_time > start_time`, `starting_price > 0` và `step_price > 0`.
-- [🔄 IN PROGRESS] **2. Tìm kiếm & Lọc nâng cao (`feat/auction-search`)**:
+- [x] **2. Tìm kiếm & Lọc nâng cao (`feat/auction-search`)**:
   - Sử dụng **Spring Data JPA Specification** kết hợp `Pageable` để viết API `GET /api/v1/auctions`: Hỗ trợ tìm theo từ khóa tên sản phẩm, lọc theo `category_id`, lọc theo trạng thái (`UPCOMING`, `IN_PROGRESS`, `COMPLETED`), lọc theo khoảng giá và sắp xếp theo thời gian kết thúc.
 
 ---
@@ -148,7 +148,7 @@ Tách biệt hoàn toàn việc "Quản lý thông tin phiên" và "Hành độn
 ### Giai đoạn 4: Trái tim Hệ thống — Đặt giá Đa luồng & Thời gian thực (Bidding Engine)
 Áp dụng kiến trúc **Ghi qua REST API, Đọc qua WebSocket** và kiểm soát chặt chẽ tính toàn vẹn tài chính dưới tải cao.
 
-- [ ] **1. Cấu hình WebSocket (`feat/websocket-config`)**:
+- [🔄 IN PROGRESS] **1. Cấu hình WebSocket (`feat/websocket-config`)**:
   - Thiết lập STOMP over WebSocket với broker `/topic`. Khi có biến động ở phiên đấu giá nào, server sẽ bắn bản tin vào kênh `/topic/auctions/{auctionId}`.
 - [ ] **2. Xử lý Đặt giá & Khóa dòng tiền (`feat/bidding-engine`)**:
   - Tạo Entity: `Bid`.
