@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/ws/**").permitAll()
                         .requestMatchers("/api/v1/products/me", "/api/v1/auctions/me").hasRole("SELLER")
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/v1/auctions/**",

@@ -148,9 +148,9 @@ Tách biệt hoàn toàn việc "Quản lý thông tin phiên" và "Hành độn
 ### Giai đoạn 4: Trái tim Hệ thống — Đặt giá Đa luồng & Thời gian thực (Bidding Engine)
 Áp dụng kiến trúc **Ghi qua REST API, Đọc qua WebSocket** và kiểm soát chặt chẽ tính toàn vẹn tài chính dưới tải cao.
 
-- [🔄 IN PROGRESS] **1. Cấu hình WebSocket (`feat/websocket-config`)**:
+- [x] **1. Cấu hình WebSocket (`feat/websocket-config`)**:
   - Thiết lập STOMP over WebSocket với broker `/topic`. Khi có biến động ở phiên đấu giá nào, server sẽ bắn bản tin vào kênh `/topic/auctions/{auctionId}`.
-- [ ] **2. Xử lý Đặt giá & Khóa dòng tiền (`feat/bidding-engine`)**:
+- [🔄 IN PROGRESS] **2. Xử lý Đặt giá & Khóa dòng tiền (`feat/bidding-engine`)**:
   - Tạo Entity: `Bid`.
   - Xây dựng API `POST /api/v1/auctions/{id}/bids`. Bên trong hàm Service (`@Transactional`), bắt buộc thực thi theo đúng trình tự khóa (**Pessimistic Write Lock** trên bản ghi `Auction` hoặc **Redis Distributed Lock**):
     1. Kiểm tra trạng thái phiên phải là `IN_PROGRESS` và thời gian hiện tại nhỏ hơn `end_time`.
